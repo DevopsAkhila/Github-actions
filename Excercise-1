@@ -1,0 +1,336 @@
+Below is a **complete, end-to-end lab guide** for **Exercise 1: Matrix Builds with Caching and Artifact Sharing**.
+It is written so you can **implement it exactly**, verify results in GitHub Actions, and also use it as **exam / viva notes**.
+
+---
+
+# 🧪 Exercise 1: Matrix Builds with Caching and Artifact Sharing (Node.js)
+
+## 🎯 Objectives
+
+* Run tests **in parallel** across multiple Node.js versions
+* **Cache dependencies** to speed up CI
+* **Share artifacts** between jobs
+* Understand **job dependencies (`needs`)**
+* Observe behavior when cache breaks or tests fail
+
+---
+
+## 1️⃣ Prerequisites
+
+* GitHub repository
+* Node.js knowledge (basic)
+* GitHub Actions enabled (default)
+
+---
+
+## 2️⃣ Project Structure (Create This Exactly)
+
+```
+node-matrix-demo/
+├── .github/
+│   └── workflows/
+│       └── matrix-ci.yml
+├── src/
+│   └── sum.js
+├── tests/
+│   └── sum.test.js
+├── package.json
+├── package-lock.json
+```
+
+---
+
+## 3️⃣ Create a Simple Node.js App
+
+### 📄 `src/sum.js`
+
+```js
+function sum(a, b) {
+  return a + b;
+}
+
+module.exports = sum;
+```
+
+---
+
+### 📄 `tests/sum.test.js`
+
+```js
+const sum = require('../src/sum');
+
+test('adds 1 + 2 to equal 3', () => {
+  expect(sum(1, 2)).toBe(3);
+});
+```
+
+---
+
+## 4️⃣ Create `package.json`
+
+```json
+{
+  "name": "matrix-node-demo",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
+```
+
+---
+
+### 📌 Generate `package-lock.json`
+
+Run locally once:
+
+```bash
+npm install
+```
+
+Commit **both** `package.json` and `package-lock.json`.
+
+---
+
+## 5️⃣ GitHub Actions Workflow (MAIN PART)
+
+### 📄 `.github/workflows/matrix-ci.yml`
+
+```yaml
+name: Matrix Node CI with Cache and Artifacts
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+
+  # -----------------------------
+  # SETUP JOB (INSTALL + CACHE)
+  # -----------------------------
+  setup:
+    name: Setup Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Archive node_modules
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
+
+  # -----------------------------
+  # TEST JOB (MATRIX)
+  # -----------------------------
+  test:
+    name: Test on Node ${{ matrix.node }}
+    needs: setup
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: [16, 18, 20]
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Download dependencies
+        uses: actions/download-artifact@v4
+        with:
+          name: node-modules
+          path: node_modules
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-node-${{ matrix.node }}
+          path: .
+          if-no-files-found: ignore
+
+  # -----------------------------
+  # ARCHIVE JOB (COLLECT RESULTS)
+  # -----------------------------
+  archive:
+    name: Archive All Test Results
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-test-results
+
+      - name: List collected artifacts
+        run: ls -R all-test-results
+
+      - name: Upload combined report
+        uses: actions/upload-artifact@v4
+        with:
+          name: combined-test-reports
+          path: all-test-results
+```
+
+---
+
+## 6️⃣ What Happens During Execution (Very Important)
+
+### 🔹 Setup Job
+
+* Runs once
+* Installs dependencies
+* Saves `node_modules` as artifact
+* Uses npm cache
+
+---
+
+### 🔹 Test Job (Matrix)
+
+* Runs **3 jobs in parallel**
+
+  * Node 16
+  * Node 18
+  * Node 20
+* Downloads shared dependencies
+* Executes tests independently
+* Uploads artifacts per Node version
+
+---
+
+### 🔹 Archive Job
+
+* Runs only after **all test jobs succeed**
+* Downloads **all matrix artifacts**
+* Uploads a combined artifact
+
+---
+
+## 7️⃣ Verify in GitHub Actions UI
+
+✔ Matrix shows **3 parallel jobs**
+✔ First run → cache **miss**
+✔ Second run → cache **hit**
+✔ Artifacts tab shows:
+
+* `node-modules`
+* `test-results-node-16`
+* `test-results-node-18`
+* `test-results-node-20`
+* `combined-test-reports`
+
+---
+
+## 8️⃣ Experiment Tasks (MANDATORY)
+
+### 🧪 Experiment 1: Break Cache
+
+Change:
+
+```yaml
+cache: npm
+```
+
+to:
+
+```yaml
+cache: yarn
+```
+
+👉 Observe cache miss / failure.
+
+---
+
+### 🧪 Experiment 2: Introduce Test Failure
+
+Modify test:
+
+```js
+expect(sum(1, 2)).toBe(4);
+```
+
+👉 Observe:
+
+* One matrix job fails
+* `archive` job is **skipped**
+* Other matrix jobs still run
+
+---
+
+### 🧪 Experiment 3: Skip Node Version
+
+Add condition:
+
+```yaml
+if: matrix.node != 16
+```
+
+👉 Node 16 job skipped
+
+---
+
+## 9️⃣ Exam / Interview Key Points 🧠
+
+* Matrix jobs run **in parallel**
+* Cache is **per runner, per key**
+* Artifacts are used to share data **between jobs**
+* `needs` enforces job order
+* One failing matrix job does **not stop others**
+* Downstream jobs skip on failure by default
+
+---
+
+## 🔟 Common Mistakes ❌
+
+| Mistake                        | Result          |
+| ------------------------------ | --------------- |
+| Missing `package-lock.json`    | Cache fails     |
+| No `needs:`                    | Race conditions |
+| Uploading large artifacts      | Slow pipeline   |
+| Assuming node_modules persists | ❌ Wrong         |
+
+---
+
+## ✅ Final Outcome
+
+✔ Optimized CI
+✔ Faster re-runs
+✔ Parallel testing
+✔ Real-world DevOps pattern
+✔ Exam-ready understanding
+
+---
+
+If you want next:
+
+* 🔹 Convert this to **GitHub Actions reusable workflow**
+* 🔹 Compare with **Jenkins matrix builds**
+* 🔹 Add **SonarQube / Coverage**
+* 🔹 Turn this into **exam Q&A**
+
+Just say 👍
