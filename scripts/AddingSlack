@@ -1,0 +1,77 @@
+Part 1: Add Slack Approval Notifications (GitHub Actions)
+🎯 Goal
+
+Notify Slack when:
+
+Production deployment is waiting for approval
+
+Production deployment is approved and completed
+
+1️⃣ Create Slack Incoming Webhook
+
+Go to Slack → App Directory
+
+Search Incoming Webhooks
+
+Add to your workspace
+
+Choose a channel (e.g. #deployments)
+
+Copy the Webhook URL
+
+2️⃣ Store Slack Webhook as GitHub Secret
+Repo → Settings → Secrets and variables → Actions
+
+
+Add:
+
+Name	Value
+SLACK_WEBHOOK_URL	<your-webhook-url>
+3️⃣ Update Workflow with Slack Notifications
+🔹 Slack Notify Before Prod Approval
+
+Add a job before production:
+
+  notify-prod-approval:
+    name: Notify Slack – Prod Approval Needed
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Send Slack notification
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"🚨 *Production deployment awaiting approval*\nRepo: '"${{ github.repository }}"'\nRun: '"${{ github.run_id }}"'"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+🔹 Update Prod Job Dependency
+
+Modify prod job:
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: notify-prod-approval
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+🔹 Slack Notify After Prod Deployment
+
+Add last step inside deploy-prod:
+
+      - name: Notify Slack – Prod Deployed
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"✅ *Production deployment completed successfully*"}' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+🧠 Slack Learning Points (Exam Gold)
+
+Slack secrets must be stored securely
+
+Webhooks work without Slack plugins
+
+Notifications are non-blocking
+
+Approvals are enforced by environment protection, not Slack
