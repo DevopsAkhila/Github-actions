@@ -9,12 +9,5 @@ A GitHub account and repository.
 Basic YAML familiarity.
 For Exercise 3, a free Vercel account (for deployment simulation; no real secrets needed beyond API tokens).
 Clone your repo locally, add files, commit, and push to trigger workflows.
-----------------------------------------------------------------------------------------------------------------
-We'll cover 3 exercises. For each:
------------------------------------------------------------------------------------------------------
-Agenda: High-level plan and learning objectives.
-Expected Steps: Guided walkthrough of what to implement and test.
-Necessary Files: Code/content to create in your repo (copy-paste into files).
-Solution: The complete, working workflow YAML (spoiler: implement this after trying yourself).
------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------
 Test workflows in the "Actions" tab of your repo. Debug using workflow logs.
