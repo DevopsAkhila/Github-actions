@@ -11,3 +11,15 @@ python-github-actions-demo/
 ├── requirements.txt
 ├── .gitignore
 └── README.md
+
+
+# Python GitHub Actions Demo
+
+Simple Python application built and tested using GitHub Actions.
+
+## Pipeline Steps
+- Checkout code
+- Setup Python
+- Install dependencies
+- Lint with flake8
+- Test with pytest
