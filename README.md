@@ -1,13 +1,17 @@
-# Github-actions
+Exercise 3: Reusable Workflow for Vercel Deployment
+Agenda:
 
-Advanced GitHub Actions Lab Exercises
-These exercises are designed for users with basic GitHub Actions knowledge (e.g., simple CI workflows). They focus on advanced concepts like matrix strategies, caching, artifacts, conditional deployments, secrets, and reusable workflows. Each exercise assumes you have a GitHub repository set up (create one if needed, e.g., advanced-actions-lab). You'll push files to it and trigger workflows via pushes or pull requests.
------------------------------------------------------------------------------------------------------------------
-Prerequisites:
+Create a reusable workflow for deploying a static site to Vercel.
+Call it from a caller workflow with inputs (e.g., project ID).
+Handle failures with notifications (e.g., Slack webhook via secret).
+Objectives: Modularize actions, pass parameters, integrate external services.
 
-A GitHub account and repository.
-Basic YAML familiarity.
-For Exercise 3, a free Vercel account (for deployment simulation; no real secrets needed beyond API tokens).
-Clone your repo locally, add files, commit, and push to trigger workflows.
-------------------------------------------------------------------------------------------------------------------
-Test workflows in the "Actions" tab of your repo. Debug using workflow logs.
+Expected Steps:
+
+Create a simple static site (HTML/JS).
+In Vercel dashboard, create a project linked to your repo (get Project ID from settings).
+Add secret VERCEL_TOKEN (from Vercel integrations) and SLACK_WEBHOOK (dummy: "https://hooks.slack.com/...").
+Implement reusable workflow in .github/workflows/reusable-deploy.yml (outputs success/fail).
+Caller workflow in .github/workflows/deploy-site.yml: Triggers on PR, calls reusable with input.
+Push/PR; check Vercel deploys and Slack sim (logs echo webhook call).
+Experiment: Pass invalid input, observe error propagation.
