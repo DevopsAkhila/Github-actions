@@ -1,0 +1,9 @@
+🔹 Matrix build (Python 3.9–3.12)
+
+🔹 Upload test & coverage artifacts
+
+🔹 Dockerize Python app
+
+🔹 Deploy to AWS / Heroku
+
+🔹 Compare Python CI in Jenkins vs GitHub Actions
