@@ -9,7 +9,7 @@ on: #trigger the workflow execution
       - main
   workflow_dispatch: #manual trigger of the workflow
 jobs:
-    Job1-Build the nodejs code:
+    Job1_Build_nodejs_code:
       runs-on: ubuntu-22.04
       steps:
         - name: Clone the repo
