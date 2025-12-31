@@ -1,0 +1,36 @@
+---
+name: Github-actions workflow for java code
+on:
+  push:
+    braches:
+      -master
+  pull_request:
+    branches:
+      -master
+  workflow_dispatch:
+jobs:
+  Build_java_code:
+    runs-on: ubuntu-24.04
+    steps :
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup jdk
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'oracle'
+      - name: Setup maven
+        uses: s4u/setup-maven-action@v1.19.0
+        with:
+          maven-version: '3.9.11'
+      - name: Package application
+        run: mvn package
+      - name: Run tests with maven
+        run: mvn test
+      - name: Build with maven
+        run: mvn clean install     
+      - name: Archive test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: target/surefire-reports 
