@@ -1,0 +1,353 @@
+
+
+---
+
+# 🧪 Exercise 2: Conditional Deployment with Secrets and Approvals
+
+## 🎯 Objectives (What You Will Learn)
+
+* Multi-environment deployment (**dev / staging / prod**)
+* Branch-based conditional deployments
+* Secure handling of **GitHub Secrets**
+* Manual **approval gates** for production
+* Dynamic job execution using `if` conditions
+* Understanding **environment protections**
+
+---
+
+## 🗂️ Repository Structure (Create These Files)
+
+```
+conditional-deploy-demo/
+├── .github/
+│   └── workflows/
+│       └── conditional-deploy.yml
+├── scripts/
+│   └── deploy.sh
+├── README.md
+```
+
+---
+
+## 1️⃣ Dummy Deploy Script (Safe for Demo)
+
+### 📄 `scripts/deploy.sh`
+
+```bash
+#!/bin/bash
+
+ENVIRONMENT=$1
+
+echo "Starting deployment to environment: $ENVIRONMENT"
+
+echo "Using API_KEY: $API_KEY"
+echo "Using DB_URL: $DB_URL"
+
+echo "Deployment to $ENVIRONMENT completed successfully"
+```
+
+### Make it executable (locally)
+
+```bash
+chmod +x scripts/deploy.sh
+```
+
+📌 **Important**
+
+* Secrets will be **masked automatically** in GitHub Actions logs
+* This script is intentionally simple for learning
+
+---
+
+## 2️⃣ Add Secrets in GitHub (MANDATORY)
+
+Go to:
+
+```
+Repository → Settings → Secrets and variables → Actions → New repository secret
+```
+
+Add:
+
+| Name      | Value       |
+| --------- | ----------- |
+| `API_KEY` | `dummy-key` |
+| `DB_URL`  | `dummy-db`  |
+
+✅ These secrets are **encrypted** and **masked in logs**
+
+---
+
+## 3️⃣ Configure Environments (IMPORTANT STEP)
+
+### Go to:
+
+```
+Settings → Environments
+```
+
+---
+
+### 🔹 Create Environment: `dev`
+
+* No approval needed
+
+---
+
+### 🔹 Create Environment: `staging`
+
+* No approval needed
+
+---
+
+### 🔹 Create Environment: `production`
+
+* ✅ Enable **Required reviewers**
+* Add **your GitHub username**
+
+📌 This creates a **manual approval gate**
+
+---
+
+## 4️⃣ GitHub Actions Workflow (CORE IMPLEMENTATION)
+
+### 📄 `.github/workflows/conditional-deploy.yml`
+
+```yaml
+name: Conditional Deployment Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+
+  # ------------------------
+  # BUILD JOB (ALWAYS RUNS)
+  # ------------------------
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build step
+        run: echo "Building application..."
+
+  # ------------------------
+  # DEV DEPLOY (develop)
+  # ------------------------
+  deploy-dev:
+    name: Deploy to Dev
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Dev
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          ./scripts/deploy.sh dev
+
+  # ------------------------
+  # STAGING DEPLOY (main)
+  # ------------------------
+  deploy-staging:
+    name: Deploy to Staging
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Staging
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          ./scripts/deploy.sh staging
+
+  # ------------------------
+  # PROD DEPLOY (APPROVAL)
+  # ------------------------
+  deploy-prod:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Production
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          ./scripts/deploy.sh prod
+```
+
+---
+
+## 5️⃣ Execution Flow (VERY IMPORTANT)
+
+### 🔹 Push to `develop`
+
+```
+git checkout develop
+git push origin develop
+```
+
+✔ Build runs
+✔ Deploys to **dev**
+❌ staging/prod skipped
+
+---
+
+### 🔹 Push to `main`
+
+```
+git checkout main
+git push origin main
+```
+
+✔ Build runs
+✔ Deploys to **staging**
+⏸ **Production waits for approval**
+
+---
+
+### 🔹 Approve Production
+
+1. Go to **Actions**
+2. Open workflow run
+3. Click **Review deployments**
+4. Approve → Production deploy runs
+
+---
+
+## 6️⃣ Verify Secret Masking 🔒
+
+Logs will show:
+
+```
+Using API_KEY: ***
+Using DB_URL: ***
+```
+
+📌 GitHub **never prints secret values**
+
+---
+
+## 7️⃣ Experiment Tasks (MANDATORY)
+
+### 🧪 Experiment 1: Wrong Condition
+
+Change:
+
+```yaml
+if: github.ref == 'refs/heads/main'
+```
+
+to:
+
+```yaml
+if: github.ref == 'main'
+```
+
+👉 Observe: Job is **skipped**
+
+---
+
+### 🧪 Experiment 2: Remove Environment
+
+Remove:
+
+```yaml
+environment: production
+```
+
+👉 Observe:
+❌ No approval required
+⚠️ Dangerous in real systems
+
+---
+
+### 🧪 Experiment 3: Echo Secret Directly
+
+```bash
+echo $API_KEY
+```
+
+👉 Output still masked (`***`)
+
+---
+
+## 8️⃣ Exam / Interview Key Points 🧠
+
+* Secrets are **encrypted & masked**
+* `environment:` enables approval gates
+* `if:` controls job execution
+* `needs:` defines deployment order
+* Production should **always** have manual approval
+* Branch-based deployment is industry standard
+
+---
+
+## 9️⃣ Common Mistakes ❌
+
+| Mistake                        | Result              |
+| ------------------------------ | ------------------- |
+| Missing `environment`          | No approval         |
+| Wrong `github.ref`             | Job skipped         |
+| Printing secrets               | Masked              |
+| No `needs:`                    | Prod before staging |
+| Using secrets in YAML directly | ❌ Security risk     |
+
+---
+
+## 🔟 Final Outcome
+
+✔ Secure CI/CD
+✔ Controlled deployments
+✔ Secrets protected
+✔ Manual approvals enforced
+✔ Enterprise-grade pipeline
+
+---
+
+## 📌 Real-World Mapping
+
+| GitHub Actions | Enterprise CI/CD    |
+| -------------- | ------------------- |
+| Environments   | Promotion stages    |
+| Secrets        | Vault / AWS Secrets |
+| Approval gates | Change management   |
+| Branch rules   | Release strategy    |
+
+---
+
+If you want next:
+
+* 🔹 Convert this to **reusable workflow**
+* 🔹 Add **Slack approval notifications**
+* 🔹 Compare with **Jenkins approval gates**
+* 🔹 Turn this into **exam Q&A**
+
+Just tell me 👍
