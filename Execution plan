@@ -1,0 +1,340 @@
+
+
+# 🧪 Exercise 3: Reusable Workflow for Vercel Deployment
+
+## 🎯 Objectives
+
+* Create a **reusable GitHub Actions workflow**
+* Deploy a **static site to Vercel**
+* Pass inputs from a **caller workflow**
+* Use **secrets securely**
+* Handle **failures with Slack notifications**
+* Observe **error propagation**
+
+---
+
+## 1️⃣ Repository Structure (Create Exactly)
+
+```
+vercel-reusable-demo/
+├── .github/
+│   └── workflows/
+│       ├── reusable-deploy.yml
+│       └── deploy-site.yml
+├── public/
+│   ├── index.html
+│   └── app.js
+├── vercel.json
+├── README.md
+```
+
+---
+
+## 2️⃣ Static Site (Simple & Safe)
+
+### 📄 `public/index.html`
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Vercel Reusable Workflow Demo</title>
+</head>
+<body>
+  <h1>Hello from GitHub Actions 🚀</h1>
+  <script src="app.js"></script>
+</body>
+</html>
+```
+
+---
+
+### 📄 `public/app.js`
+
+```js
+console.log("Deployed using reusable workflow!");
+```
+
+---
+
+## 3️⃣ Vercel Configuration
+
+### 📄 `vercel.json`
+
+```json
+{
+  "builds": [
+    { "src": "public/**", "use": "@vercel/static" }
+  ]
+}
+```
+
+---
+
+## 4️⃣ Vercel Setup (One-Time)
+
+1. Login to **Vercel Dashboard**
+2. Create a new project
+3. Link to this GitHub repo
+4. Go to **Project Settings**
+5. Copy:
+
+   * **Project ID**
+   * **Org ID**
+
+---
+
+## 5️⃣ Add Secrets in GitHub
+
+Go to:
+
+```
+Settings → Secrets and variables → Actions
+```
+
+Add:
+
+| Secret          | Value                           |
+| --------------- | ------------------------------- |
+| `VERCEL_TOKEN`  | From Vercel → Settings → Tokens |
+| `VERCEL_ORG_ID` | From Vercel project             |
+| `SLACK_WEBHOOK` | Dummy URL (or real webhook)     |
+
+---
+
+## 6️⃣ Reusable Workflow (CORE COMPONENT)
+
+### 📄 `.github/workflows/reusable-deploy.yml`
+
+```yaml
+name: Reusable Vercel Deploy
+
+on:
+  workflow_call:
+    inputs:
+      project_id:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+    secrets:
+      VERCEL_TOKEN:
+        required: true
+      VERCEL_ORG_ID:
+        required: true
+      SLACK_WEBHOOK:
+        required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    outputs:
+      status: ${{ steps.set-status.outputs.status }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        id: vercel-deploy
+        run: |
+          vercel pull --yes \
+            --environment=${{ inputs.environment }} \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --org=${{ secrets.VERCEL_ORG_ID }} \
+            --project=${{ inputs.project_id }}
+
+          vercel deploy --prod \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --org=${{ secrets.VERCEL_ORG_ID }} \
+            --project=${{ inputs.project_id }}
+
+      - name: Set success status
+        id: set-status
+        run: echo "status=success" >> $GITHUB_OUTPUT
+
+      - name: Notify Slack on failure
+        if: failure() && secrets.SLACK_WEBHOOK != ''
+        run: |
+          echo "Simulating Slack notification"
+          echo "Deployment failed for project ${{ inputs.project_id }}"
+```
+
+---
+
+## 7️⃣ Caller Workflow (Triggers Reusable)
+
+### 📄 `.github/workflows/deploy-site.yml`
+
+```yaml
+name: Deploy Static Site
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-site:
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      project_id: YOUR_VERCEL_PROJECT_ID
+      environment: production
+    secrets:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+```
+
+---
+
+## 8️⃣ Execution Flow (CRITICAL UNDERSTANDING)
+
+### 🔹 PR Created
+
+* Caller workflow runs
+* Reusable workflow is invoked
+* Inputs + secrets are passed
+* Deployment runs on Vercel
+
+---
+
+### 🔹 Success Case
+
+* Vercel deploy completes
+* `status=success`
+* No Slack notification
+
+---
+
+### 🔹 Failure Case
+
+* Invalid project ID / token
+* Workflow fails
+* Slack notification step runs
+* Caller workflow fails
+
+---
+
+## 9️⃣ Test Scenarios (MANDATORY EXPERIMENTS)
+
+---
+
+### 🧪 Test 1: Happy Path
+
+* Valid project ID
+* Valid token
+* Observe:
+
+  * Successful Vercel deployment
+  * Clean workflow run
+
+---
+
+### 🧪 Test 2: Invalid Project ID
+
+Change in caller:
+
+```yaml
+project_id: invalid-project-id
+```
+
+Observe:
+
+* Vercel deploy fails
+* Reusable workflow fails
+* Caller workflow fails
+* Slack notification logs printed
+
+---
+
+### 🧪 Test 3: Missing Secret
+
+Remove:
+
+```yaml
+VERCEL_TOKEN
+```
+
+Observe:
+
+* Workflow fails before deploy
+* Error propagates
+* Caller job fails
+
+---
+
+### 🧪 Test 4: Skip Slack
+
+Remove `SLACK_WEBHOOK` secret
+
+Observe:
+
+* Failure occurs
+* Slack step skipped safely
+
+---
+
+### 🧪 Test 5: Multiple Callers (Advanced)
+
+Create another workflow calling reusable with:
+
+* Different project ID
+* Same reusable logic
+
+---
+
+## 🔟 Key Concepts (Exam / Interview Gold)
+
+* `workflow_call` enables reusability
+* Inputs are **typed and validated**
+* Secrets must be explicitly passed
+* Reusable workflows **fail fast**
+* Caller inherits reusable failure
+* Slack is notification, not control
+* Vercel CLI integrates cleanly with CI
+
+---
+
+## 11️⃣ Common Mistakes ❌
+
+| Mistake                  | Result       |
+| ------------------------ | ------------ |
+| Forget passing secrets   | Auth failure |
+| Hardcoding project ID    | Not reusable |
+| Using `on: push`         | Not reusable |
+| Expecting Slack approval | ❌            |
+
+---
+
+## 12️⃣ Real-World Mapping
+
+| Concept             | Enterprise Usage           |
+| ------------------- | -------------------------- |
+| Reusable workflow   | Shared deployment template |
+| Inputs              | App-specific config        |
+| Secrets             | Vault / cloud tokens       |
+| Slack notify        | Ops visibility             |
+| Failure propagation | Release safety             |
+
+---
+
+## ✅ Final Outcome
+
+✔ Modular deployment
+✔ Secure secret handling
+✔ Reusable CI/CD logic
+✔ External service integration
+✔ Exam-ready confidence
+
+---
+
+
+
+Just tell me 🚀
