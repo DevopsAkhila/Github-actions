@@ -16,3 +16,14 @@ simple-calculator-java/
 ├── pom.xml
 ├── .gitignore
 └── README.md
+
+
+# Java GitHub Actions Demo
+
+Simple Java Maven project built using GitHub Actions.
+
+## Pipeline Steps
+- Checkout code
+- Setup JDK 17
+- Run tests
+- Package application
