@@ -1,13 +1,20 @@
-# Github-actions
+Exercise 2: Conditional Deployment with Secrets and Approvals
+Agenda:
 
-Advanced GitHub Actions Lab Exercises
-These exercises are designed for users with basic GitHub Actions knowledge (e.g., simple CI workflows). They focus on advanced concepts like matrix strategies, caching, artifacts, conditional deployments, secrets, and reusable workflows. Each exercise assumes you have a GitHub repository set up (create one if needed, e.g., advanced-actions-lab). You'll push files to it and trigger workflows via pushes or pull requests.
------------------------------------------------------------------------------------------------------------------
-Prerequisites:
+Set up a multi-environment deployment (dev/staging/prod) with branch-based conditions.
+Use GitHub secrets for sensitive data (e.g., API keys).
+Implement manual approval gates for production using environment protections.
+Objectives: Secure deployments, enforce reviews, handle job conditions dynamically.
 
-A GitHub account and repository.
-Basic YAML familiarity.
-For Exercise 3, a free Vercel account (for deployment simulation; no real secrets needed beyond API tokens).
-Clone your repo locally, add files, commit, and push to trigger workflows.
-------------------------------------------------------------------------------------------------------------------
-Test workflows in the "Actions" tab of your repo. Debug using workflow logs.
+Expected Steps:
+
+Add a dummy deploy script that echoes secrets (don't expose real ones).
+In repo Settings > Secrets and variables > Actions, add secrets: API_KEY (value: "dummy-key"), DB_URL (value: "dummy-db").
+Write workflow:
+Trigger on push to main or develop.
+Build job always.
+Deploy jobs: Conditional on branch (develop → dev, main → staging/prod).
+Prod deploy requires approval (set up in Settings > Environments > "production" with required approvers).
+
+Push to develop (deploys to dev), then main (triggers approval for prod). Approve in Actions tab.
+Experiment: Use if conditions wrong, observe skips; test secret exposure (it should mask in logs).
