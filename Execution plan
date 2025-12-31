@@ -1,0 +1,207 @@
+
+
+# ✅ Python Application – All Required Files for GitHub Actions
+
+## 📂 Final Repository Structure (IMPORTANT)
+
+```
+simple-calculator-python/
+├── .github/
+│   └── workflows/
+│       └── python-ci.yml
+├── app/
+│   ├── __init__.py
+│   └── calculator.py
+├── tests/
+│   ├── __init__.py
+│   └── test_calculator.py
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+> 🔴 **Key fix vs your earlier error**
+> `app/` **must exist as a directory**, not a filename.
+
+---
+
+## 1️⃣ Python Application Code
+
+### 📄 `app/calculator.py`
+
+```python
+def add(a, b):
+    return a + b
+```
+
+---
+
+## 2️⃣ Unit Test (pytest)
+
+### 📄 `tests/test_calculator.py`
+
+```python
+from app.calculator import add
+
+def test_add():
+    assert add(2, 3) == 5
+```
+
+---
+
+## 3️⃣ Dependencies
+
+### 📄 `requirements.txt`
+
+```
+pytest
+flake8
+pytest-cov
+```
+
+---
+
+## 4️⃣ GitHub Actions Workflow (CI Pipeline)
+
+### 📄 `.github/workflows/python-ci.yml`
+
+```yaml
+name: Python CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint code
+        run: flake8 app tests
+
+      - name: Run tests with coverage
+        run: |
+          pytest tests \
+            --junitxml=report.xml \
+            --cov=app \
+            --cov-report=xml
+```
+
+✔ Uses **pip caching**
+✔ Runs **lint + tests**
+✔ Generates **test & coverage reports**
+
+---
+
+## 5️⃣ Git Ignore
+
+### 📄 `.gitignore`
+
+```
+__pycache__/
+.pytest_cache/
+.env
+.venv
+.coverage
+coverage.xml
+```
+
+---
+
+## 6️⃣ README (Optional)
+
+### 📄 `README.md`
+
+```md
+# Python GitHub Actions Demo
+
+Simple Python application built and tested using GitHub Actions.
+
+## Pipeline Steps
+- Checkout code
+- Setup Python
+- Install dependencies
+- Lint with flake8
+- Test with pytest
+```
+
+---
+
+## 7️⃣ How to Run Locally (Sanity Check)
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+pytest
+```
+
+---
+
+## 8️⃣ What You’ll See in GitHub Actions
+
+✔ Green check ✔
+✔ pip cache hit on reruns
+✔ flake8 output
+✔ pytest reports generated
+
+---
+
+## 9️⃣ Why Your Earlier Error Happened (Explained)
+
+Error:
+
+```
+FileNotFoundError: [Errno 2] No such file or directory: 'app'
+```
+
+### ❌ Cause
+
+```bash
+flake8 app tests
+```
+
+but:
+
+* `app` directory didn’t exist
+* or Python path was wrong
+
+### ✅ Fixed By
+
+* Creating proper package structure
+* Adding `__init__.py`
+* Using `--cov=app` (directory, not file)
+
+---
+
+## 🔟 Exam / Interview Ready Notes
+
+| Topic         | Key Point             |
+| ------------- | --------------------- |
+| setup-python  | Installs Python       |
+| pip cache     | Speeds builds         |
+| flake8        | Linting               |
+| pytest        | Testing               |
+| pytest-cov    | Coverage              |
+| app vs app.py | Directory is required |
+
+---
+
