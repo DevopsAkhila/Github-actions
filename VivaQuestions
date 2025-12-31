@@ -1,0 +1,49 @@
+Part 3: Exam / Viva Q&A (READY TO MEMORIZE)
+Q1. How do you enforce manual approval in GitHub Actions?
+
+A: By assigning a job to a protected environment with required reviewers.
+
+Q2. How are secrets protected in GitHub Actions?
+
+A: Secrets are encrypted at rest and masked (***) in logs.
+
+Q3. What happens if one matrix job fails?
+
+A: Other matrix jobs continue, but downstream jobs are skipped.
+
+Q4. How do you conditionally deploy based on branch?
+
+A: Using if: github.ref == 'refs/heads/<branch>'.
+
+Q5. Can Slack approvals replace GitHub approvals?
+
+A: No. Slack is for notification only; approvals are enforced by GitHub environments.
+
+Q6. Difference between Jenkins input and GitHub environment approval?
+
+A: Jenkins approvals are code-defined; GitHub approvals are policy-defined in UI.
+
+Q7. Why is environment-based approval safer?
+
+A: It cannot be removed accidentally from code.
+
+Q8. Where are secrets injected at runtime?
+
+A: Via environment variables using ${{ secrets.NAME }}.
+
+Q9. What happens if environment is removed?
+
+A: Approval gate is bypassed (dangerous).
+
+Q10. Real-world deployment flow?
+
+A:
+develop → dev → main → staging → approval → production
+
+✅ Final Summary
+
+✔ Slack notifications added
+✔ Secure approval gates enforced
+✔ Jenkins comparison clarified
+✔ Exam-ready Q&A provided
+✔ Enterprise CI/CD concepts covered
