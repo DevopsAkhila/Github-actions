@@ -1,0 +1,57 @@
+Part 2: GitHub Actions vs Jenkins Approval Gates
+🔄 Conceptual Mapping
+Concept	GitHub Actions	Jenkins
+Approval gate	Environment protection	input step
+Secrets	GitHub Secrets	Credentials plugin
+Conditional deploy	if:	when
+Notifications	Webhooks	Slack plugin
+UI approval	Actions UI	Jenkins UI
+🔹 Jenkins Example (Production Approval)
+📄 Jenkinsfile
+pipeline {
+  agent any
+
+  stages {
+    stage('Build') {
+      steps {
+        echo 'Building app'
+      }
+    }
+
+    stage('Deploy to Staging') {
+      when {
+        branch 'main'
+      }
+      steps {
+        echo 'Deploying to staging'
+      }
+    }
+
+    stage('Approve Production') {
+      when {
+        branch 'main'
+      }
+      steps {
+        input message: 'Approve production deployment?',
+              ok: 'Deploy'
+      }
+    }
+
+    stage('Deploy to Production') {
+      when {
+        branch 'main'
+      }
+      steps {
+        echo 'Deploying to production'
+      }
+    }
+  }
+}
+
+🔥 Key Differences (Interview Favorite)
+Area	GitHub Actions	Jenkins
+Approval config	UI-based (environment)	Code-based (input)
+Security	Cannot bypass easily	Can be skipped in code
+Audit trail	Built-in	Plugin-dependent
+Maintenance	Low	High
+Setup	No server	Requires Jenkins server
