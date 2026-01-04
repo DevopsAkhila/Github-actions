@@ -7,7 +7,7 @@ on:
       runner:
         description: 'Select the runner to use'
         required: true
-        type: string
+        type: choice
         options:
           - ubuntu-latest
           - windows-latest
