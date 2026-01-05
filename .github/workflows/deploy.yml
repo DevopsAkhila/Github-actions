@@ -2,14 +2,6 @@
 #Workflow 1 triggering workflow2. This is workflow2-deploy.yml
 name: Deploy application
 on:
-  push:
-    branches: 
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
   workflow_run:
     workflows: 
       - Build application
