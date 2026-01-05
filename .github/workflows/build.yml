@@ -1,0 +1,20 @@
+#Workflow 1 triggering workflow2. This is workflow1-build.yml
+name: Build application
+on:
+  push:
+    branches: 
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build step
+        run: echo "Building the application..."
+      - name: Run tests
+        run: echo "Running tests..."
